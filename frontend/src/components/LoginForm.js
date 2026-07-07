@@ -1,7 +1,21 @@
 import { useState } from 'react';
-import axios from 'axios';
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4001';
+const STATIC_CREDENTIALS = {
+  'manager@example.com': {
+    email: 'manager@example.com',
+    password: 'manager123',
+    name: 'Manager',
+    role: 'manager',
+    token: 'static-manager-token',
+  },
+  'employee@example.com': {
+    email: 'employee@example.com',
+    password: 'employee123',
+    name: 'Employee',
+    role: 'employee',
+    token: 'static-employee-token',
+  },
+};
 
 const LoginForm = ({ onSuccess }) => {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -12,15 +26,23 @@ const LoginForm = ({ onSuccess }) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
     setError('');
-    try {
-      const response = await axios.post(`${API_BASE}/auth/login`, form);
-      onSuccess({ token: response.data.token, user: response.data.user });
-    } catch (err) {
-      setError(err.response?.data?.error || 'Unable to sign in');
+
+    const normalizedEmail = form.email.trim().toLowerCase();
+    const account = STATIC_CREDENTIALS[normalizedEmail];
+
+    if (account && account.password === form.password) {
+      onSuccess({
+        token: account.token,
+        user: { email: account.email, name: account.name, role: account.role },
+      });
+      setForm({ email: '', password: '' });
+      return;
     }
+
+    setError('Invalid email or password');
   };
 
   return (
@@ -40,6 +62,6 @@ const LoginForm = ({ onSuccess }) => {
       </p>
     </form>
   );
-};
+}
 
 export default LoginForm;
